@@ -9,31 +9,44 @@ let token;
 let userId;
 
 beforeAll(async () => {
-  // Connect to test database
-  await mongoose.connect(process.env.MONGODB_URI_TEST || 'mongodb://localhost:27017/event-planner-test');
+  try {
+    // Connect to test database
+    await mongoose.connect(process.env.MONGODB_URI_TEST || 'mongodb://localhost:27017/event-planner-test', {
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    });
 
-  // Create test user
-  const user = new User({
-    email: 'test@example.com',
-    password: 'password123',
-    name: 'Test User'
-  });
-  await user.save();
-  userId = user._id;
+    // Create test user
+    const user = new User({
+      email: 'test@example.com',
+      password: 'password123',
+      name: 'Test User'
+    });
+    await user.save();
+    userId = user._id;
 
-  // Generate token
-  token = jwt.sign(
-    { userId: user._id },
-    process.env.JWT_SECRET || 'test-secret',
-    { expiresIn: '1h' }
-  );
+    // Generate token
+    token = jwt.sign(
+      { userId: user._id },
+      process.env.JWT_SECRET || 'test-secret',
+      { expiresIn: '1h' }
+    );
+  } catch (error) {
+    console.error('Test setup failed:', error);
+    throw error;
+  }
 });
 
 afterAll(async () => {
-  // Clean up database
-  await User.deleteMany({});
-  await Event.deleteMany({});
-  await mongoose.connection.close();
+  try {
+    // Clean up database
+    await User.deleteMany({});
+    await Event.deleteMany({});
+    await mongoose.connection.close();
+  } catch (error) {
+    console.error('Test cleanup failed:', error);
+    throw error;
+  }
 });
 
 describe('Event Routes', () => {
